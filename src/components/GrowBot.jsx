@@ -67,12 +67,8 @@ Signature tip: ${flower.bot}
 FORMAT: Plain text only. No markdown, no bullets, no headers. Conversational — this will be read aloud.`;
 
 async function fetchTrefleData(scientificName) {
-  const token = import.meta.env.VITE_TREFLE_TOKEN;
-  if (!token) return null;
   try {
-    const res = await fetch(
-      `https://trefle.io/api/v1/plants/search?q=${encodeURIComponent(scientificName)}&token=${token}`
-    );
+    const res = await fetch(`/api/trefle?q=${encodeURIComponent(scientificName)}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.data?.[0] || null;
@@ -106,12 +102,7 @@ ${trefleData.growth ? [
     generationConfig: { maxOutputTokens: 1000 },
   });
 
-  const isDev = import.meta.env.DEV;
-  const url = isDev
-    ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`
-    : "/api/gemini";
-
-  const response = await fetch(url, {
+  const response = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,
@@ -142,7 +133,7 @@ const GARDEN_POSITIONS = {
 
 function Home({ onPick }) {
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0" }}>
+    <div className="flex-1 overflow-y-auto" style={{ background: "#FDFCF6" }}>
       {/* Header */}
       <div style={{ padding: "52px 24px 12px", userSelect: "none" }}>
         <div style={{ fontSize: 11, color: "#aaa", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "inherit" }}>Your</div>
@@ -192,13 +183,11 @@ function Home({ onPick }) {
 
 // ─── bud avatar with animated eyes ────────────────────────────────────────
 function BudAvatar({ speaking, listening, size = 144 }) {
-  const eyeStyle = (cx) => ({
+  const pupilAnim = {
     transformBox: "fill-box",
     transformOrigin: "center",
-    animation: speaking
-      ? "eyeTalk 0.35s ease-in-out infinite alternate"
-      : "none",
-  });
+    animation: speaking ? "eyeSwing 0.8s ease-in-out infinite" : "none",
+  };
   return (
     <svg
       width={size}
@@ -219,13 +208,18 @@ function BudAvatar({ speaking, listening, size = 144 }) {
         d="M50 6 C50 6, 13 46, 13 74 C13 96, 29 110, 50 110 C71 110, 87 96, 87 74 C87 46, 50 6, 50 6Z"
         fill="#b8d9ea"
       />
-      {/* Left eye */}
-      <ellipse cx="36" cy="69" rx="9.5" ry="12" fill="#3d2b1f" style={eyeStyle(36)} />
-      {/* Right eye */}
-      <ellipse cx="64" cy="69" rx="9.5" ry="12" fill="#3d2b1f" style={eyeStyle(64)} />
-      {/* Eye shines */}
-      <ellipse cx="40" cy="64" rx="3" ry="3" fill="white" opacity="0.55" />
-      <ellipse cx="68" cy="64" rx="3" ry="3" fill="white" opacity="0.55" />
+      {/* Left eye — white sclera */}
+      <ellipse cx="36" cy="68" rx="10" ry="13" fill="#f5f2ee" />
+      {/* Left pupil (swings left-right while speaking) */}
+      <ellipse cx="36" cy="70" rx="6.5" ry="8.5" fill="#3d2b1f" style={pupilAnim} />
+      {/* Left eye shine */}
+      <ellipse cx="39.5" cy="64.5" rx="2.5" ry="2.5" fill="white" opacity="0.9" style={pupilAnim} />
+      {/* Right eye — white sclera */}
+      <ellipse cx="64" cy="68" rx="10" ry="13" fill="#f5f2ee" />
+      {/* Right pupil (swings left-right while speaking) */}
+      <ellipse cx="64" cy="70" rx="6.5" ry="8.5" fill="#3d2b1f" style={pupilAnim} />
+      {/* Right eye shine */}
+      <ellipse cx="67.5" cy="64.5" rx="2.5" ry="2.5" fill="white" opacity="0.9" style={pupilAnim} />
       {/* Cheeks */}
       <ellipse cx="22" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
       <ellipse cx="78" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
@@ -354,7 +348,7 @@ function PlantChat({ flower, onBack }) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col" style={{ background: "#fff8d3" }}>
+    <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
 
       {/* ── Header (navy) ── */}
       <div className="flex items-center gap-3 px-4 pt-11 pb-3" style={{ background: "#0d2d46" }}>
@@ -388,14 +382,14 @@ function PlantChat({ flower, onBack }) {
 
       {/* ── Talk view ── */}
       {activeTab === "talk" && (
-        <div className="flex-1 flex flex-col" style={{ background: "#fff8d3" }}>
+        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
           {/* Bud hero zone */}
           <div className="flex flex-col items-center justify-center px-6 pt-5 pb-4" style={{ flex: "1 1 0" }}>
             {/* Toggle to chat */}
             <button
               onClick={() => setActiveTab("conversation")}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full mb-6 active:scale-95 transition-transform"
-              style={{ background: "#03695e", color: "#fff" }}
+              style={{ background: "#3f5ba4", color: "#fff" }}
             >
               <MessageSquare size={14} strokeWidth={2} />
               <span className="text-[10px] uppercase tracking-widest">Chat history</span>
@@ -420,8 +414,8 @@ function PlantChat({ flower, onBack }) {
                 <div className="relative flex items-center justify-center">
                   {listening && (
                     <>
-                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #03695e", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
-                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #03695e", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
+                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #3f5ba4", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
+                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #3f5ba4", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
                     </>
                   )}
                   <button
@@ -431,16 +425,16 @@ function PlantChat({ flower, onBack }) {
                     style={{
                       width: 64,
                       height: 64,
-                      background: listening ? "#03695e" : (loading || speaking) ? "rgba(3,105,94,0.25)" : "#03695e",
-                      color: (loading || speaking) ? "#03695e" : "#ffffff",
-                      boxShadow: listening ? "0 0 0 8px rgba(3,105,94,0.15)" : "0 4px 16px rgba(3,105,94,0.4)",
-                      border: (loading || speaking) ? "2px solid #03695e" : "none",
+                      background: listening ? "#3f5ba4" : (loading || speaking) ? "rgba(63,91,164,0.25)" : "#3f5ba4",
+                      color: (loading || speaking) ? "#3f5ba4" : "#ffffff",
+                      boxShadow: listening ? "0 0 0 8px rgba(63,91,164,0.15)" : "0 4px 16px rgba(63,91,164,0.4)",
+                      border: (loading || speaking) ? "2px solid #3f5ba4" : "none",
                     }}
                   >
                     {listening ? <MicOff size={26} strokeWidth={2} /> : <Mic size={26} strokeWidth={2} />}
                   </button>
                 </div>
-                <span className="text-[11px] uppercase tracking-widest" style={{ color: "#03695e", opacity: loading || speaking ? 0.4 : 1 }}>
+                <span className="text-[11px] uppercase tracking-widest" style={{ color: "#3f5ba4", opacity: loading || speaking ? 0.4 : 1 }}>
                   {listening ? "Listening…" : speaking ? "Bud is talking…" : loading ? "Thinking…" : "Tap to talk"}
                 </span>
               </div>
@@ -449,13 +443,13 @@ function PlantChat({ flower, onBack }) {
 
           {/* Quick asks */}
           {messages.length <= 2 && !loading && (
-            <div className="flex gap-2 px-4 py-2 overflow-x-auto" style={{ background: "#fff8d3", borderTop: "1px solid rgba(13,45,70,0.08)", scrollbarWidth: "none" }}>
+            <div className="flex gap-2 px-4 py-2 overflow-x-auto" style={{ background: "#FDFCF6", borderTop: "1px solid rgba(13,45,70,0.08)", scrollbarWidth: "none" }}>
               {quickAsks.map((q) => (
                 <button
                   key={q.label}
                   onClick={() => { sendMessage(q.q); setActiveTab("conversation"); }}
                   className="whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] active:scale-95 transition font-medium"
-                  style={{ border: "1.5px solid #03695e", color: "#03695e", background: "transparent" }}
+                  style={{ border: "1.5px solid #3f5ba4", color: "#3f5ba4", background: "transparent" }}
                 >
                   {q.label}
                 </button>
@@ -467,13 +461,13 @@ function PlantChat({ flower, onBack }) {
 
       {/* ── Conversation view ── */}
       {activeTab === "conversation" && (
-        <div className="flex-1 flex flex-col" style={{ background: "#ffffff" }}>
+        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
           {/* Toggle back to talk */}
           <div className="flex justify-center pt-3 pb-1">
             <button
               onClick={() => setActiveTab("talk")}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
-              style={{ background: "#f0f0f0", color: "#0d2d46" }}
+              style={{ background: "#3f5ba4", color: "#fff" }}
             >
               <Mic size={14} strokeWidth={2} />
               <span className="text-[10px] uppercase tracking-widest">Talk to Bud</span>
@@ -516,7 +510,7 @@ function PlantChat({ flower, onBack }) {
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder={`Type to ${flower.nickname}…`}
               className="flex-1 px-3 py-2 rounded-full text-[12px] outline-none"
-              style={{ background: "#f0f0f0", border: "1px solid rgba(13,45,70,0.10)", color: "#0d2d46" }}
+              style={{ background: "rgba(63,91,164,0.07)", border: "1px solid rgba(63,91,164,0.15)", color: "#0d2d46" }}
               disabled={loading || listening}
               autoFocus
             />
@@ -524,7 +518,7 @@ function PlantChat({ flower, onBack }) {
               onClick={() => sendMessage()}
               disabled={!input.trim() || loading}
               className="rounded-full active:scale-90 transition flex items-center justify-center disabled:opacity-30"
-              style={{ background: "#0d2d46", color: "#fff8d3", width: 32, height: 32, flexShrink: 0 }}
+              style={{ background: "#3f5ba4", color: "#ffffff", width: 32, height: 32, flexShrink: 0 }}
             >
               <Send size={13} strokeWidth={2} />
             </button>
@@ -549,9 +543,10 @@ function PlantChat({ flower, onBack }) {
           0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
           30% { opacity: 1; transform: scale(1.15); }
         }
-        @keyframes eyeTalk {
-          from { transform: scaleY(1); }
-          to   { transform: scaleY(0.28); }
+        @keyframes eyeSwing {
+          0%   { transform: translateX(-2.5px); }
+          50%  { transform: translateX(2.5px); }
+          100% { transform: translateX(-2.5px); }
         }
       `}</style>
     </div>
@@ -574,7 +569,7 @@ function Dot({ delay }) {
   return (
     <span
       className="inline-block w-2 h-2 rounded-full"
-      style={{ background: "#03695e", animation: `dot-pulse 1.2s ease-in-out ${delay}s infinite` }}
+      style={{ background: "#3f5ba4", animation: `dot-pulse 1.2s ease-in-out ${delay}s infinite` }}
     />
   );
 }
@@ -595,8 +590,8 @@ export default function App() {
             height: 800,
             maxHeight: "calc(100vh - 32px)",
             borderRadius: 44,
-            background: "#ffffff",
-            boxShadow: "0 32px 80px -16px rgba(0,0,0,0.6), 0 0 0 10px #0d2d46, 0 0 0 11px rgba(255,248,211,0.15)",
+            background: "#FDFCF6",
+            boxShadow: "0 32px 80px -16px rgba(0,0,0,0.6), 0 0 0 10px #0d2d46, 0 0 0 11px rgba(63,91,164,0.15)",
           }}
         >
           {/* Phone notch */}
