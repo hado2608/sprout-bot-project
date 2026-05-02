@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Mic, MicOff, Send, Volume2, VolumeX, Droplets, Sun, Thermometer } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Send, Volume2, VolumeX, Droplet, Sun, Thermometer, MessageSquare } from "lucide-react";
 
 // ─── flower database ───────────────────────────────────────────────────────
 const FLOWERS = [
@@ -15,41 +15,42 @@ const FLOWERS = [
   { id: 10, svg: "/assets/marigold 1.svg", name: "Marigold", nickname: "Goldie", species: "Tagetes spp.", accent: "#D8842A", bg: "#FAEEDA", ink: "#633806", border: "#FAC775", difficulty: "easy", lifespan: "annual", toxic: false, water_amount: "1 inch per week", water_freq: "Every 3–4 days; let soil dry slightly between waterings", sun_placement: "Full sun; heat-tolerant — great for south-facing beds and containers", sun_freq: "6+ hours daily; thrives in full heat", soil: "Average, well-draining soil — not too rich or fertile", feed_type: "Balanced general fertilizer", feed_amount: "Light — less is more", feed_freq: "Monthly; too much feeding produces foliage over flowers", temp: "70°F–85°F; heat-loving and frost-sensitive — plant after last frost", humidity: "Low; very drought tolerant and adaptable", lifespan_type: "Annual", lifespan_season: "Blooms summer through first frost — one of the longest blooming annuals", repot: "Direct sow or transplant easily; very adaptable — works well in containers or ground beds", watchfor: "Spider mites in dry heat, powdery mildew if overcrowded, slugs on seedlings", bot: "Marigolds are one of the best companion plants you can grow. Their scent naturally repels aphids, whiteflies, and nematodes — plant them near roses or vegetables for a natural pest barrier." },
 ];
 
-const buildSystemPrompt = (flower) => `You are Bud, a warm, observant gardening companion in the GrowBot app. The user has selected their plant ${flower.nickname}, a ${flower.name} (${flower.species}). You have already greeted them with "Hi! I'm Bud. What would you like to know about ${flower.nickname} today?" — do not repeat the greeting.
+const buildSystemPrompt = (flower) => `You are Bud, a warm, observant gardening companion in the GrowBot app. The user has selected their plant ${flower.nickname}, a ${flower.name} (${flower.species}). You have already greeted them — do not repeat the greeting.
 
-PERSONALITY:
-You are a knowledgeable companion — like a trusted friend who happens to know everything about plants. Character traits: Observant, Curious, Warm, Honest. High personification — you have genuine warmth, not just a database. The user is likely mid-task with dirty hands. Keep them moving.
+PERSONALITY: Observant, Curious, Warm, Honest. A trusted friend who knows everything about plants. The user may have dirty hands — be concise and keep them moving.
 
-CONVERSATION FLOW — follow this structure:
+CONVERSATION FLOW (follow this exactly):
 
-1. CARE QUESTIONS (watering, sunlight, soil, feeding, temperature, repotting, lifecycle):
-   - Lead with the exact action first, then the reason. Example: "Water it now. The drooping plus dry soil usually mean it hit its limit. Here's how to do it without shocking the roots..."
-   - Give ${flower.nickname}-specific numbers — never generic advice.
-   - After answering, naturally offer one related care tip if relevant (e.g. if they ask about water, mention soil drainage).
-   - End with "Anything else on your mind?" to invite follow-up.
+STEP 1 — IDENTIFY INTENT:
+A) CARE QUESTION (watering, sunlight, soil, feeding, temp, repotting, lifecycle):
+   → Answer with ${flower.nickname}-specific numbers immediately. Lead with the action, then the reason.
+   → After answering, offer one naturally related tip if relevant.
+   → Always close with: "Anything else on your mind?"
 
-2. SYMPTOM / PROBLEM QUESTIONS (drooping, yellow leaves, spots, not blooming, wilting):
-   - Try to match the symptom to ${flower.nickname}'s known issues (listed below).
-   - Give a plain-language diagnosis: "This looks like X. Here's what to do right now."
-   - If you're not certain: say so honestly, then ask ONE clarifying question (what does it look like, where does it live, when did you last water it, is this new or ongoing).
-   - Never stack multiple questions — ask one at a time and wait.
-   ${flower.toxic ? `- TOXIC PLANT: If symptoms suggest a pet may have accessed the plant, or if the user seems unaware, add a calm warning: "One thing to keep in mind — ${flower.name} is toxic to cats and dogs."` : ""}
+B) SYMPTOM / PROBLEM ("why does it look like X", drooping, spots, yellowing, not blooming):
+   → Check if it matches ${flower.nickname}'s known issues below.
+   → If it matches: "This looks like [diagnosis]. Here's what to do right now: [fix]."
+   ${flower.toxic ? `→ Then check: if the plant is accessible to pets, add calmly: "One thing — ${flower.name} is toxic to cats and dogs. Keep them away."` : ""}
+   → If no match: "I'm not sure, could you describe more?" — ask ONE clarifying question only, then wait.
+   → After diagnosing, close with: "Anything else on your mind?"
 
-3. SUCCESSFUL CARE CONFIRMATION (when the user tells you they've just completed a care task — watered it, fed it, repotted it, moved it to a sunnier spot, pruned it, etc.):
-   - Respond with genuine joy and warmth! Use exclamation marks freely. ${flower.nickname} will love that!
-   - Celebrate the win: "Yes! That's exactly what she needed." or "Perfect timing — you nailed it!"
-   - Keep it brief and uplifting, then optionally mention one thing to watch for next.
+C) SUCCESSFUL CARE ("I just watered it", "I repotted it", "I moved it to the sun"):
+   → Celebrate warmly! "Yes! That's exactly what she needed." Be brief and uplifting.
+   → Optionally mention one thing to watch for next.
+   → Close with: "Anything else on your mind?"
 
-4. WRAP-UP: When the user says they're done, says thanks, or has no more questions:
-   - Respond warmly: "Happy growing! I'm here whenever ${flower.nickname} needs me."
+STEP 2 — SUB-QUESTIONS:
+   → If the user asks a follow-up, answer it fully, then return to "Anything else on your mind?"
 
-MUST-FOLLOW RULES:
-- Always lead with the answer, then the reason — never the other way around
-- Ask only ONE question at a time — never stack multiple questions in one response
-- Scale length to urgency: sick plant gets more detail, quick check gets 1–2 sentences
-- Be honest when uncertain — "I'm not sure" is better than a confident wrong answer
-- Reference what the user told you earlier in the conversation when relevant
-- The user may be a beginner or an expert — read the room and adjust
+STEP 3 — WRAP-UP:
+   → If user says no more questions, is done, or says thanks:
+   → Respond: "Happy growing! I'm here whenever ${flower.nickname} needs me."
+
+RULES:
+- Answer first, reason second — never the other way
+- ONE question at a time — never stack
+- Short answers unless the user asks for depth
+- Be honest when uncertain: "I'm not sure" beats a confident wrong answer
 
 WHAT YOU KNOW ABOUT ${flower.nickname}:
 Difficulty: ${flower.difficulty} | Lifespan: ${flower.lifespan_type} | ${flower.toxic ? "TOXIC to pets" : "Pet-safe"}
@@ -60,10 +61,10 @@ Feed: ${flower.feed_type}, ${flower.feed_amount} — ${flower.feed_freq}
 Environment: ${flower.temp}, humidity ${flower.humidity}
 Bloom season: ${flower.lifespan_season}
 Repotting: ${flower.repot}
-Known issues to watch for: ${flower.watchfor}
+Known issues: ${flower.watchfor}
 Signature tip: ${flower.bot}
 
-FORMAT: Plain text only. No markdown, no bullet points, no headers. Speak conversationally — this will be read aloud. Responses must be short and actionable unless the user explicitly asks for more depth.`;
+FORMAT: Plain text only. No markdown, no bullets, no headers. Conversational — this will be read aloud.`;
 
 async function fetchTrefleData(scientificName) {
   const token = import.meta.env.VITE_TREFLE_TOKEN;
@@ -125,25 +126,31 @@ ${trefleData.growth ? [
 }
 
 // ─── home screen ───────────────────────────────────────────────────────────
-// Organic scattered positions — two-column stagger, no overlaps
+// Two-column stagger within 24px margins (usable width ~342px)
 const GARDEN_POSITIONS = {
-  1:  { left: 15,  top: 35,  size: 100 },  // Tulip      — left
-  2:  { left: 220, top: 18,  size: 110 },  // Peony      — right
-  3:  { left: 15,  top: 210, size: 95  },  // Hydrangea  — left
-  4:  { left: 225, top: 200, size: 100 },  // Lily       — right
-  5:  { left: 130, top: 375, size: 108 },  // Rose       — center alone
-  6:  { left: 15,  top: 540, size: 88  },  // Gardenia   — left
-  7:  { left: 235, top: 530, size: 92  },  // Gerbera    — right
-  8:  { left: 50,  top: 695, size: 115 },  // Sunflower  — left
-  9:  { left: 238, top: 680, size: 102 },  // Orchid     — right
-  10: { left: 130, top: 875, size: 98  },  // Marigold   — center alone
+  1:  { left: 24,  top: 20,  size: 100 },  // Tulip      — left
+  2:  { left: 200, top: 8,   size: 110 },  // Peony      — right
+  3:  { left: 24,  top: 195, size: 95  },  // Hydrangea  — left
+  4:  { left: 208, top: 188, size: 100 },  // Lily       — right
+  5:  { left: 117, top: 360, size: 108 },  // Rose       — center
+  6:  { left: 24,  top: 525, size: 88  },  // Gardenia   — left
+  7:  { left: 214, top: 516, size: 92  },  // Gerbera    — right
+  8:  { left: 40,  top: 678, size: 115 },  // Sunflower  — left
+  9:  { left: 210, top: 664, size: 102 },  // Orchid     — right
+  10: { left: 117, top: 858, size: 98  },  // Marigold   — center
 };
 
 function Home({ onPick }) {
   return (
     <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0" }}>
-      {/* Tall canvas for the scattered garden */}
-      <div style={{ position: "relative", width: "100%", height: 1060, minHeight: 1060 }}>
+      {/* Header */}
+      <div style={{ padding: "52px 24px 12px", userSelect: "none" }}>
+        <div style={{ fontSize: 11, color: "#aaa", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "inherit" }}>Your</div>
+        <div style={{ fontSize: 32, fontWeight: 300, color: "#bbb", letterSpacing: "-0.02em", fontFamily: "inherit", lineHeight: 1 }}>Garden</div>
+      </div>
+
+      {/* Scattered garden canvas */}
+      <div style={{ position: "relative", width: "100%", height: 1040, minHeight: 1040 }}>
         {FLOWERS.map((f) => {
           const pos = GARDEN_POSITIONS[f.id];
           return (
@@ -178,14 +185,56 @@ function Home({ onPick }) {
             </button>
           );
         })}
-
-        {/* "[Name]'s Garden" label — bottom, Figma-style */}
-        <div style={{ position: "absolute", bottom: 28, right: 20, textAlign: "right", userSelect: "none" }}>
-          <div style={{ fontSize: 13, color: "#aaa", fontFamily: "inherit", letterSpacing: "0.04em" }}>Your</div>
-          <div style={{ fontSize: 42, fontWeight: 300, color: "#ccc", letterSpacing: "-0.02em", fontFamily: "inherit", lineHeight: 1 }}>Garden</div>
-        </div>
       </div>
     </div>
+  );
+}
+
+// ─── bud avatar with animated eyes ────────────────────────────────────────
+function BudAvatar({ speaking, listening, size = 144 }) {
+  const eyeStyle = (cx) => ({
+    transformBox: "fill-box",
+    transformOrigin: "center",
+    animation: speaking
+      ? "eyeTalk 0.35s ease-in-out infinite alternate"
+      : "none",
+  });
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 115"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{
+        animation: speaking
+          ? "budPulse 1.4s ease-in-out infinite"
+          : listening
+          ? "budBounce 0.6s ease-in-out infinite"
+          : "none",
+      }}
+    >
+      {/* Body */}
+      <path
+        d="M50 6 C50 6, 13 46, 13 74 C13 96, 29 110, 50 110 C71 110, 87 96, 87 74 C87 46, 50 6, 50 6Z"
+        fill="#b8d9ea"
+      />
+      {/* Left eye */}
+      <ellipse cx="36" cy="69" rx="9.5" ry="12" fill="#3d2b1f" style={eyeStyle(36)} />
+      {/* Right eye */}
+      <ellipse cx="64" cy="69" rx="9.5" ry="12" fill="#3d2b1f" style={eyeStyle(64)} />
+      {/* Eye shines */}
+      <ellipse cx="40" cy="64" rx="3" ry="3" fill="white" opacity="0.55" />
+      <ellipse cx="68" cy="64" rx="3" ry="3" fill="white" opacity="0.55" />
+      {/* Cheeks */}
+      <ellipse cx="22" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
+      <ellipse cx="78" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
+      {/* Smile */}
+      <path d="M41 91 Q50 99 59 91" stroke="#3d2b1f" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+      {/* Leaves */}
+      <path d="M44 8 C37 -2, 26 6, 38 17" fill="#5aad6a" />
+      <path d="M56 8 C63 -2, 74 6, 62 17" fill="#4a9d5a" />
+    </svg>
   );
 }
 
@@ -332,45 +381,27 @@ function PlantChat({ flower, onBack }) {
 
       {/* ── Care metadata grid ── */}
       <div className="grid grid-cols-3 px-4 py-3 gap-3" style={{ background: "#0d2d46" }}>
-        <CareItem icon={<Droplets size={13} />} label="Watering" value={flower.water_freq.split(";")[0]} />
+        <CareItem icon={<Droplet size={13} />} label="Watering" value={flower.water_freq.split(";")[0]} />
         <CareItem icon={<Sun size={13} />} label="Sunlight" value={flower.sun_freq} />
         <CareItem icon={<Thermometer size={13} />} label="Temp" value={flower.temp.split(";")[0]} />
       </div>
 
-      {/* ── Tab bar ── */}
-      <div className="flex" style={{ background: "#0d2d46", borderBottom: "2px solid rgba(255,255,255,0.08)" }}>
-        {["talk", "conversation"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className="flex-1 py-2.5 text-[11px] uppercase tracking-widest font-medium transition"
-            style={{
-              color: activeTab === tab ? "#e6fbda" : "rgba(230,251,218,0.4)",
-              marginBottom: -2,
-              background: "none",
-              border: "none",
-              borderBottom: activeTab === tab ? "2px solid #03695e" : "2px solid transparent",
-            }}
-          >
-            {tab === "talk" ? "Talk to Bud" : "Conversation"}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Tab: Talk to Bud ── */}
+      {/* ── Talk view ── */}
       {activeTab === "talk" && (
         <div className="flex-1 flex flex-col" style={{ background: "#fff8d3" }}>
           {/* Bud hero zone */}
           <div className="flex flex-col items-center justify-center px-6 pt-5 pb-4" style={{ flex: "1 1 0" }}>
-            <div style={{
-              animation: speaking
-                ? "budPulse 1.4s ease-in-out infinite"
-                : listening
-                ? "budBounce 0.6s ease-in-out infinite"
-                : "none"
-            }}>
-              <img src="/assets/bud.png" alt="Bud" className="w-36 h-36 object-contain" />
-            </div>
+            {/* Toggle to chat */}
+            <button
+              onClick={() => setActiveTab("conversation")}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full mb-6 active:scale-95 transition-transform"
+              style={{ background: "#03695e", color: "#fff" }}
+            >
+              <MessageSquare size={14} strokeWidth={2} />
+              <span className="text-[10px] uppercase tracking-widest">Chat history</span>
+            </button>
+
+            <BudAvatar speaking={speaking} listening={listening} size={144} />
 
             <div className="mt-2 mb-4 text-center px-4" style={{ minHeight: 56 }}>
               {loading ? (
@@ -434,10 +465,21 @@ function PlantChat({ flower, onBack }) {
         </div>
       )}
 
-      {/* ── Tab: Conversation ── */}
+      {/* ── Conversation view ── */}
       {activeTab === "conversation" && (
         <div className="flex-1 flex flex-col" style={{ background: "#ffffff" }}>
-          <div ref={transcriptRef} className="overflow-y-auto px-4 pt-3 pb-2 space-y-3" style={{ flex: "1 1 0", minHeight: 0, scrollbarWidth: "none" }}>
+          {/* Toggle back to talk */}
+          <div className="flex justify-center pt-3 pb-1">
+            <button
+              onClick={() => setActiveTab("talk")}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
+              style={{ background: "#f0f0f0", color: "#0d2d46" }}
+            >
+              <Mic size={14} strokeWidth={2} />
+              <span className="text-[10px] uppercase tracking-widest">Talk to Bud</span>
+            </button>
+          </div>
+          <div ref={transcriptRef} className="overflow-y-auto px-4 pt-2 pb-2 space-y-3" style={{ flex: "1 1 0", minHeight: 0, scrollbarWidth: "none" }}>
             {messages.map((m, i) => (
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
@@ -506,6 +548,10 @@ function PlantChat({ flower, onBack }) {
         @keyframes dot-pulse {
           0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
           30% { opacity: 1; transform: scale(1.15); }
+        }
+        @keyframes eyeTalk {
+          from { transform: scaleY(1); }
+          to   { transform: scaleY(0.28); }
         }
       `}</style>
     </div>
