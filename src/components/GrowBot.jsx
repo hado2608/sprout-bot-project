@@ -553,7 +553,7 @@ function PlantChat({ flower, onBack }) {
                 {quickAsks.map((q) => (
                   <button
                     key={q.label}
-                    onClick={() => { unlockAudio(); sendMessage(q.q); setActiveTab("conversation"); }}
+                    onClick={() => { unlockAudio(); stopSpeaking(); sendMessage(q.q); setActiveTab("conversation"); }}
                     className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] active:scale-95 transition"
                     style={{ background: "#f4f3ec", border: "1px solid #dcdcdc", color: "#111" }}
                   >
@@ -567,7 +567,7 @@ function PlantChat({ flower, onBack }) {
           {/* CHAT MODE button */}
           <div className="flex justify-center">
             <button
-              onClick={() => { unlockAudio(); setActiveTab("conversation"); }}
+              onClick={() => { unlockAudio(); stopSpeaking(); setActiveTab("conversation"); }}
               className="flex items-center gap-2 px-6 py-3 rounded-full active:scale-95 transition-transform"
               style={{ background: "#03695e", color: "#fff" }}
             >
