@@ -117,31 +117,58 @@ ${trefleData.growth ? [
 }
 
 // ─── home screen ───────────────────────────────────────────────────────────
-// Two-column stagger within 24px margins (usable width ~342px)
 const GARDEN_POSITIONS = {
-  1:  { left: 24,  top: 20,  size: 100 },  // Tulip      — left
-  2:  { left: 200, top: 8,   size: 110 },  // Peony      — right
-  3:  { left: 24,  top: 195, size: 95  },  // Hydrangea  — left
-  4:  { left: 208, top: 188, size: 100 },  // Lily       — right
-  5:  { left: 117, top: 360, size: 108 },  // Rose       — center
-  6:  { left: 24,  top: 525, size: 88  },  // Gardenia   — left
-  7:  { left: 214, top: 516, size: 92  },  // Gerbera    — right
-  8:  { left: 40,  top: 678, size: 115 },  // Sunflower  — left
-  9:  { left: 210, top: 664, size: 102 },  // Orchid     — right
-  10: { left: 117, top: 858, size: 98  },  // Marigold   — center
+  1:  { left: 124, top: 423, size: 103 }, // Tulip (Tilly)
+  2:  { left: 86,  top: 95,  size: 113 }, // Peony (Penny)
+  3:  { left: 55,  top: 263, size: 97  }, // Hydrangea (Hattie)
+  4:  { left: 168, top: 237, size: 103 }, // Lily (Lila)
+  5:  { left: 242, top: 409, size: 111 }, // Rose (Rosie)
+  6:  { left: 40,  top: 554, size: 90  }, // Gardenia (Gigi)
+  7:  { left: 199, top: 571, size: 94  }, // Gerbera Daisy (Gertrude)
+  8:  { left: 230, top: 81,  size: 118 }, // Sunflower (Sunny)
+  9:  { left: 60,  top: 724, size: 95  }, // Orchid (Ollie)
+  10: { left: 158, top: 897, size: 101 }, // Marigold (Goldie)
 };
 
-function Home({ onPick }) {
+function HRope() {
+  let d = "M 0,6";
+  for (let i = 0; i < 26; i++) {
+    d += ` Q ${i * 16 + 8},${i % 2 === 0 ? 11 : 1} ${(i + 1) * 16},6`;
+  }
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: "#FDFCF6" }}>
-      {/* Header */}
-      <div style={{ padding: "52px 24px 12px", userSelect: "none" }}>
-        <div style={{ fontSize: 11, color: "#aaa", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "inherit" }}>Your</div>
-        <div style={{ fontSize: 32, fontWeight: 300, color: "#bbb", letterSpacing: "-0.02em", fontFamily: "inherit", lineHeight: 1 }}>Garden</div>
-      </div>
+    <svg width="100%" height="12" viewBox="0 0 416 12" preserveAspectRatio="none" style={{ display: "block" }}>
+      <path d={d} fill="none" stroke="#7a5946" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
-      {/* Scattered garden canvas */}
-      <div style={{ position: "relative", width: "100%", height: 1040, minHeight: 1040 }}>
+function VRope({ height }) {
+  let d = "M 6,0";
+  const steps = Math.ceil(height / 16);
+  for (let i = 0; i < steps; i++) {
+    d += ` Q ${i % 2 === 0 ? 11 : 1},${i * 16 + 8} 6,${(i + 1) * 16}`;
+  }
+  return (
+    <svg width="12" height={height} style={{ display: "block" }}>
+      <path d={d} fill="none" stroke="#7a5946" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function Home({ onPick }) {
+  const canvasH = 1050;
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0" }}>
+      <HRope />
+      <div style={{ position: "relative", width: "100%", height: canvasH }}>
+        {/* Left rope */}
+        <div style={{ position: "absolute", left: 24, top: 0, pointerEvents: "none", zIndex: 1 }}>
+          <VRope height={canvasH} />
+        </div>
+        {/* Right rope */}
+        <div style={{ position: "absolute", right: 24, top: 0, pointerEvents: "none", zIndex: 1 }}>
+          <VRope height={canvasH} />
+        </div>
         {FLOWERS.map((f) => {
           const pos = GARDEN_POSITIONS[f.id];
           return (
@@ -155,27 +182,33 @@ function Home({ onPick }) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                width: pos.size + 48,
+                width: pos.size + 50,
                 background: "none",
                 border: "none",
                 padding: 0,
                 cursor: "pointer",
+                zIndex: 2,
               }}
             >
-              <img
-                src={f.svg}
-                alt={f.name}
-                style={{ width: pos.size, height: pos.size, objectFit: "contain", display: "block" }}
-              />
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginTop: 6, textAlign: "center", lineHeight: 1.2, fontFamily: "inherit" }}>
+              <img src={f.svg} alt={f.name} style={{ width: pos.size, height: pos.size, objectFit: "contain", display: "block" }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginTop: 6, textAlign: "center", lineHeight: 1.2 }}>
                 {f.nickname}
               </div>
-              <div style={{ fontSize: 11, color: "#777", marginTop: 2, textAlign: "center", fontFamily: "inherit" }}>
+              <div style={{ fontSize: 11, color: "#777", marginTop: 2, textAlign: "center" }}>
                 {f.name}
               </div>
             </button>
           );
         })}
+      </div>
+      <HRope />
+      {/* MAANYA'S GARDEN button */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "16px 24px 32px" }}>
+        <div style={{ background: "#f3ece8", border: "2px solid #7a5946", borderRadius: 8, padding: "16px 40px", width: "100%", maxWidth: 305, textAlign: "center" }}>
+          <span style={{ color: "#03695e", fontSize: 16, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Maanya's Garden
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -209,12 +242,9 @@ function PlantChat({ flower, onBack }) {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [volume, setVolume] = useState(0.8);
-  const volumeRef = useRef(0.8);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [activeTab, setActiveTab] = useState("talk");
   const [trefleData, setTrefleData] = useState(null);
-  const [msgExpanded, setMsgExpanded] = useState(false);
 
   useEffect(() => {
     fetchTrefleData(flower.species).then(setTrefleData);
@@ -282,11 +312,9 @@ function PlantChat({ flower, onBack }) {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => { setMsgExpanded(false); }, [messages]);
 
   useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
   useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
-  useEffect(() => { volumeRef.current = volume; }, [volume]);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
 
   const stopSpeaking = () => { window.speechSynthesis?.cancel(); setSpeaking(false); };
@@ -321,10 +349,11 @@ function PlantChat({ flower, onBack }) {
     const voices = voicesRef.current.length
       ? voicesRef.current
       : (window.speechSynthesis?.getVoices() ?? []);
+    // Prefer warmer, less-robotic voices; Karen & Nicky sound warmer on iOS
     const priority = [
-      "Samantha", "Karen", "Moira", "Tessa",
-      "Google US English", "Microsoft Zira", "Microsoft Eva",
-      "Google UK English Female",
+      "Nicky", "Karen", "Samantha", "Tessa", "Moira",
+      "Microsoft Aria", "Google US English",
+      "Microsoft Zira", "Google UK English Female",
     ];
     for (const name of priority) {
       const v = voices.find(v => v.name.includes(name));
@@ -345,7 +374,7 @@ function PlantChat({ flower, onBack }) {
       const u = new SpeechSynthesisUtterance(text);
       // Keep a strong ref — Chrome GC can collect the utterance mid-speech causing silent playback
       utteranceRef.current = u;
-      u.rate = 0.95; u.pitch = 1.2; u.volume = volumeRef.current;
+      u.rate = 1.05; u.pitch = 1.6;
       const voice = pickWarmFemaleVoice();
       if (voice) u.voice = voice;
       let resumeInterval;
@@ -422,172 +451,131 @@ function PlantChat({ flower, onBack }) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
+    <div className="flex-1 flex flex-col" style={{ background: "#fdfcf6" }}>
 
-      {/* ── Header (navy) ── */}
-      <div className="flex items-center gap-3 px-4 pt-11 pb-3" style={{ background: "#0d2d46" }}>
-        <button onClick={() => { stopSpeaking(); onBack(); }} className="p-2 -ml-1 rounded-full active:scale-90 transition">
-          <ArrowLeft size={20} strokeWidth={2} color="#fff8d3" />
+      {/* ── Header (white) ── */}
+      <div className="flex items-center justify-between px-4 pt-11 pb-2" style={{ background: "#fdfcf6" }}>
+        <button onClick={() => { stopSpeaking(); onBack(); }} className="p-2 -ml-2 rounded-full active:scale-90 transition">
+          <ArrowLeft size={20} strokeWidth={2} color="#0d2d46" />
         </button>
-        <img src={flower.svg} alt={flower.name} className="w-10 h-10 object-contain" />
-        <div className="flex-1 min-w-0">
-          <div className="text-[9px] uppercase tracking-widest" style={{ color: "#e6fbda", opacity: 0.6 }}>
-            {flower.name} · {flower.difficulty}
-          </div>
-          <div className="text-[22px] font-semibold leading-tight" style={{ color: "#fff8d3" }}>
-            {flower.nickname}
-          </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[22px] font-semibold leading-tight" style={{ color: "#0d2d46" }}>{flower.nickname}</span>
+          <span className="text-[9px] uppercase tracking-widest" style={{ color: "#0d2d46", opacity: 0.6 }}>{flower.name} · {flower.difficulty}</span>
         </div>
-        <button
-          onClick={() => { if (speaking) stopSpeaking(); setVoiceEnabled(v => !v); }}
-          className="p-2 rounded-full active:scale-90 transition"
-          style={{ color: "#fff8d3", opacity: voiceEnabled ? 1 : 0.4 }}
-        >
-          {voiceEnabled ? <Volume2 size={18} strokeWidth={2} /> : <VolumeX size={18} strokeWidth={2} />}
-        </button>
+        <img src={flower.svg} alt={flower.name} style={{ width: 40, height: 40, objectFit: "contain" }} />
       </div>
 
-      {/* ── Care metadata grid ── */}
-      <div className="grid grid-cols-3 px-4 py-3 gap-3" style={{ background: "#0d2d46" }}>
-        <CareItem icon={<Droplet size={13} />} label="Watering" value={flower.water_freq.split(";")[0]} />
-        <CareItem icon={<Sun size={13} />} label="Sunlight" value={flower.sun_freq} />
-        <CareItem icon={<Thermometer size={13} />} label="Temp" value={flower.temp.split(";")[0]} />
-      </div>
-
-      {/* ── Shared tab toggle — hidden when message is expanded ── */}
-      {!msgExpanded && (
-        <div className="flex justify-center pt-3 pb-1" style={{ background: "#FDFCF6" }}>
-          {activeTab === "talk" ? (
-            <button
-              onClick={() => { unlockAudio(); setActiveTab("conversation"); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
-              style={{ background: "#3f5ba4", color: "#fff" }}
-            >
-              <MessageSquare size={14} strokeWidth={2} />
-              <span className="text-[10px] uppercase tracking-widest">Chat history</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => { unlockAudio(); setActiveTab("talk"); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
-              style={{ background: "#3f5ba4", color: "#fff" }}
-            >
-              <Mic size={14} strokeWidth={2} />
-              <span className="text-[10px] uppercase tracking-widest">Talk to Bud</span>
-            </button>
-          )}
+      {/* ── Care metadata card ── */}
+      <div className="px-4 pb-3" style={{ background: "#fdfcf6" }}>
+        <div className="grid grid-cols-3 px-4 py-3 gap-3 rounded-[16px] border" style={{ background: "#fff", borderColor: "#eaeaea" }}>
+          <CareItem icon={<Droplet size={13} />} label="Watering" value={flower.water_freq.split(";")[0]} />
+          <CareItem icon={<Sun size={13} />} label="Sunlight" value={flower.sun_freq} />
+          <CareItem icon={<Thermometer size={13} />} label="Temp" value={flower.temp.split(";")[0]} />
         </div>
-      )}
+      </div>
 
       {/* ── Talk view ── */}
       {activeTab === "talk" && (
-        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
-          {/* Bud hero zone */}
-          <div className="flex flex-col items-center justify-center px-6 pt-4 pb-4" style={{ flex: "1 1 0" }}>
-            {!msgExpanded && <BudAvatar speaking={speaking} listening={listening} size={144} />}
+        <div className="flex-1 flex flex-col px-4 pb-5" style={{ background: "#fdfcf6", gap: 14 }}>
+          {/* Bordered main card */}
+          <div className="flex-1 flex flex-col rounded-[16px] border overflow-hidden" style={{ borderColor: "#eaeaea" }}>
+            {/* Top row: Bud + message + voice toggle */}
+            <div className="flex items-start gap-2 p-3">
+              <BudAvatar speaking={speaking} listening={listening} size={82} />
+              <div className="flex-1 pt-1 min-w-0">
+                {loading ? (
+                  <div className="flex gap-1.5 mt-2"><Dot delay={0} /><Dot delay={0.15} /><Dot delay={0.3} /></div>
+                ) : (
+                  <p className="text-[14px] leading-snug" style={{ color: "#464646", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {lastBudMessage}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => { if (speaking) stopSpeaking(); setVoiceEnabled(v => !v); }}
+                className="p-1 active:scale-90 transition shrink-0 mt-1"
+                style={{ color: "#0d2d46", opacity: voiceEnabled ? 1 : 0.35 }}
+              >
+                {voiceEnabled ? <Volume2 size={18} strokeWidth={2} /> : <VolumeX size={18} strokeWidth={2} />}
+              </button>
+            </div>
 
-            <div className="mt-2 mb-4 text-center px-4" style={{ width: "100%" }}>
-              {loading ? (
-                <div className="flex justify-center gap-1.5 mt-4">
-                  <Dot delay={0} /><Dot delay={0.15} /><Dot delay={0.3} />
-                </div>
-              ) : msgExpanded ? (
-                /* Expanded: full message, scrollable, tap to collapse */
-                <div
-                  onClick={() => setMsgExpanded(false)}
-                  style={{ maxHeight: 280, overflowY: "auto", cursor: "pointer", textAlign: "left", scrollbarWidth: "none" }}
-                >
-                  <p className="text-[14px] leading-relaxed" style={{ color: "#0d2d46" }}>
-                    {lastBudMessage}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-widest mt-3" style={{ color: "#3f5ba4", opacity: 0.7, textAlign: "center" }}>
-                    Tap to close
-                  </p>
-                </div>
-              ) : (
-                /* Normal: 3-line clamp + "read more" if long */
-                <div>
-                  <p
-                    className="text-[14px] leading-snug"
-                    style={{ color: "#0d2d46", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                  >
-                    {lastBudMessage}
-                  </p>
-                  {lastBudMessage.length > 140 && (
+            {/* Center: large mic button */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4">
+              {voiceSupported && (
+                <>
+                  <div className="relative flex items-center justify-center">
+                    {listening && (
+                      <>
+                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #0d2d46", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
+                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #0d2d46", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
+                      </>
+                    )}
                     <button
-                      onClick={() => setMsgExpanded(true)}
-                      className="text-[11px] uppercase tracking-widest mt-1 active:opacity-60"
-                      style={{ color: "#3f5ba4" }}
+                      onClick={listening ? () => { listeningRef.current = false; recognitionRef.current?.stop(); } : startListening}
+                      disabled={loading || speaking}
+                      className="rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                      style={{
+                        width: 108,
+                        height: 108,
+                        background: (loading || speaking) ? "rgba(13,45,70,0.18)" : "#0d2d46",
+                        color: "#ffffff",
+                      }}
                     >
-                      Read more
+                      {listening ? <MicOff size={40} strokeWidth={2} /> : <Mic size={40} strokeWidth={2} />}
                     </button>
-                  )}
-                </div>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: "#0d2d46", opacity: loading || speaking ? 0.4 : 1 }}>
+                    {listening ? "Listening…" : speaking ? "Bud is talking…" : loading ? "Thinking…" : "Tap to talk"}
+                  </span>
+                </>
               )}
             </div>
 
-            {voiceSupported && !msgExpanded && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative flex items-center justify-center">
-                  {listening && (
-                    <>
-                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #3f5ba4", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
-                      <span className="absolute rounded-full" style={{ width: 80, height: 80, border: "2px solid #3f5ba4", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
-                    </>
-                  )}
+            {/* Bottom: quick chips */}
+            {messages.length <= 2 && !loading && (
+              <div className="flex gap-2 px-3 py-2 overflow-x-auto border-t" style={{ borderColor: "#eaeaea", scrollbarWidth: "none" }}>
+                {quickAsks.map((q) => (
                   <button
-                    onClick={listening ? () => { listeningRef.current = false; recognitionRef.current?.stop(); } : startListening}
-                    disabled={loading || speaking}
-                    className="rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                    style={{
-                      width: 64,
-                      height: 64,
-                      background: listening ? "#3f5ba4" : (loading || speaking) ? "rgba(63,91,164,0.25)" : "#3f5ba4",
-                      color: (loading || speaking) ? "#3f5ba4" : "#ffffff",
-                      boxShadow: listening ? "0 0 0 8px rgba(63,91,164,0.15)" : "0 4px 16px rgba(63,91,164,0.4)",
-                      border: (loading || speaking) ? "2px solid #3f5ba4" : "none",
-                    }}
+                    key={q.label}
+                    onClick={() => { unlockAudio(); sendMessage(q.q); setActiveTab("conversation"); }}
+                    className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] active:scale-95 transition"
+                    style={{ background: "#f4f3ec", border: "1px solid #dcdcdc", color: "#111" }}
                   >
-                    {listening ? <MicOff size={26} strokeWidth={2} /> : <Mic size={26} strokeWidth={2} />}
+                    {q.label}
                   </button>
-                </div>
-                <span className="text-[11px] uppercase tracking-widest" style={{ color: "#3f5ba4", opacity: loading || speaking ? 0.4 : 1 }}>
-                  {listening ? "Listening…" : speaking ? "Bud is talking…" : loading ? "Thinking…" : "Tap to talk"}
-                </span>
-                <div className="flex items-center gap-2 mt-1">
-                  <Volume2 size={13} style={{ color: "#3f5ba4", opacity: 0.6 }} />
-                  <input
-                    type="range" min="0" max="1" step="0.05"
-                    value={volume}
-                    onChange={e => setVolume(parseFloat(e.target.value))}
-                    style={{ width: 100, accentColor: "#3f5ba4" }}
-                  />
-                </div>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Quick asks */}
-          {messages.length <= 2 && !loading && !msgExpanded && (
-            <div className="flex gap-2 px-4 py-2 overflow-x-auto" style={{ background: "#FDFCF6", borderTop: "1px solid rgba(13,45,70,0.08)", scrollbarWidth: "none" }}>
-              {quickAsks.map((q) => (
-                <button
-                  key={q.label}
-                  onClick={() => { unlockAudio(); sendMessage(q.q); setActiveTab("conversation"); }}
-                  className="whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] active:scale-95 transition font-medium"
-                  style={{ border: "1.5px solid #3f5ba4", color: "#3f5ba4", background: "transparent" }}
-                >
-                  {q.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* CHAT MODE button */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => { unlockAudio(); setActiveTab("conversation"); }}
+              className="flex items-center gap-2 px-6 py-3 rounded-full active:scale-95 transition-transform"
+              style={{ background: "#03695e", color: "#fff" }}
+            >
+              <MessageSquare size={15} strokeWidth={2} />
+              <span className="text-[10px] uppercase tracking-widest">Chat mode</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* ── Conversation view ── */}
       {activeTab === "conversation" && (
-        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
+        <div className="flex-1 flex flex-col" style={{ background: "#fdfcf6" }}>
+          <div className="flex justify-center pt-3 pb-1">
+            <button
+              onClick={() => { unlockAudio(); setActiveTab("talk"); }}
+              className="flex items-center gap-2 px-5 py-2 rounded-full active:scale-95 transition-transform"
+              style={{ background: "#0d2d46", color: "#fff" }}
+            >
+              <Mic size={13} strokeWidth={2} />
+              <span className="text-[10px] uppercase tracking-widest">Voice mode</span>
+            </button>
+          </div>
           <div ref={transcriptRef} className="overflow-y-auto px-4 pt-2 pb-2 space-y-3" style={{ flex: "1 1 0", minHeight: 0, scrollbarWidth: "none" }}>
             {messages.map((m, i) => (
               m.role === "user" ? (
@@ -665,12 +653,12 @@ function PlantChat({ flower, onBack }) {
 
 function CareItem({ icon, label, value }) {
   return (
-    <div className="flex flex-col gap-1" style={{ color: "#e6fbda" }}>
-      <div className="flex items-center gap-1" style={{ opacity: 0.55 }}>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1" style={{ color: "#000", opacity: 0.55 }}>
         {icon}
         <span className="text-[9px] uppercase tracking-wider">{label}</span>
       </div>
-      <span className="text-[11px] leading-tight">{value}</span>
+      <span className="text-[11px] leading-tight" style={{ color: "#464646" }}>{value}</span>
     </div>
   );
 }
