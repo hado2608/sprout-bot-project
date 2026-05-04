@@ -121,20 +121,19 @@ ${trefleData.growth ? [
 let iosAudioPreUnlocked = false;
 
 // ─── home screen ───────────────────────────────────────────────────────────
-// Container is 390px wide. Rope lines at 16px each side.
-// Button = image + text label → effective width = size + 50.
-// Constraint: left ≥ 16, left + size + 50 ≤ 374.
+// Container 390px wide, ropes at 16px. Constraint: left ≥ 16, left+size+50 ≤ 374.
+// X positions vary so it reads as scattered garden, not a grid.
 const GARDEN_POSITIONS = {
-  2:  { left: 40,  top: 80,  size: 113 }, // Peony   (Penny)   — L
-  8:  { left: 206, top: 64,  size: 118 }, // Sunflwr (Sunny)   — R
-  3:  { left: 42,  top: 248, size: 97  }, // Hydrang (Hattie)  — L
-  4:  { left: 215, top: 228, size: 103 }, // Lily    (Lila)    — R
-  1:  { left: 42,  top: 415, size: 103 }, // Tulip   (Tilly)   — L
-  5:  { left: 210, top: 400, size: 111 }, // Rose    (Rosie)   — R
-  6:  { left: 42,  top: 575, size: 90  }, // Gardeni (Gigi)    — L
-  7:  { left: 210, top: 558, size: 94  }, // Gerbera (Gertrude)— R
-  9:  { left: 42,  top: 735, size: 95  }, // Orchid  (Ollie)   — L
-  10: { left: 145, top: 885, size: 101 }, // Marigld (Goldie)  — C
+  2:  { left: 84,  top: 93,  size: 113 }, // June   (Peony)
+  8:  { left: 206, top: 79,  size: 118 }, // Dolly  (Sunflower)
+  3:  { left: 54,  top: 256, size: 97  }, // Winnie (Hydrangea)
+  4:  { left: 164, top: 231, size: 103 }, // Coco   (Lily)
+  1:  { left: 109, top: 412, size: 103 }, // Bea    (Tulip)
+  5:  { left: 213, top: 399, size: 111 }, // Vera   (Rose)
+  6:  { left: 39,  top: 540, size: 90  }, // Nell   (Gardenia)
+  7:  { left: 194, top: 557, size: 94  }, // Pip    (Gerbera Daisy)
+  9:  { left: 55,  top: 720, size: 95  }, // Cass   (Orchid)
+  10: { left: 154, top: 874, size: 101 }, // Wren   (Marigold)
 };
 
 function HRope() {
@@ -166,6 +165,8 @@ function Home({ onPick }) {
   const canvasH = 1050;
   return (
     <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0", overflowX: "hidden" }}>
+      {/* Spacer pushes top rope below the phone notch */}
+      <div style={{ height: 44 }} />
       <HRope />
       <div style={{ position: "relative", width: "100%", height: canvasH }}>
         {/* Left rope — 16px from edge */}
@@ -493,7 +494,7 @@ function PlantChat({ flower, onBack }) {
                 {loading ? (
                   <div className="flex gap-1.5 mt-2"><Dot delay={0} /><Dot delay={0.15} /><Dot delay={0.3} /></div>
                 ) : (
-                  <p className="text-[14px] leading-snug" style={{ color: "#464646", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  <p className="text-[14px] leading-snug" style={{ color: "#464646" }}>
                     {lastBudMessage}
                   </p>
                 )}
