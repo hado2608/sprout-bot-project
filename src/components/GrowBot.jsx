@@ -527,12 +527,12 @@ function PlantChat({ flower, onBack }) {
                     )}
                     <button
                       onClick={listening ? () => { listeningRef.current = false; recognitionRef.current?.stop(); } : startListening}
-                      disabled={loading || speaking}
+                      disabled={loading}
                       className="rounded-full flex items-center justify-center active:scale-90 transition-transform"
                       style={{
                         width: 108,
                         height: 108,
-                        background: listening ? "#c0392b" : (loading || speaking) ? "rgba(13,45,70,0.18)" : "#0d2d46",
+                        background: listening ? "#c0392b" : loading ? "rgba(13,45,70,0.18)" : "#0d2d46",
                         color: "#ffffff",
                         transition: "background 0.2s",
                       }}
@@ -540,8 +540,8 @@ function PlantChat({ flower, onBack }) {
                       <Mic size={40} strokeWidth={2} />
                     </button>
                   </div>
-                  <span className="text-[10px] uppercase tracking-widest" style={{ color: "#0d2d46", opacity: loading || speaking ? 0.4 : 1 }}>
-                    {listening ? "Listening…" : speaking ? "Bud is talking…" : loading ? "Thinking…" : "Tap to talk"}
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: "#0d2d46", opacity: loading ? 0.4 : 1 }}>
+                    {listening ? "Listening…" : speaking ? "Tap to interrupt" : loading ? "Thinking…" : "Tap to talk"}
                   </span>
                 </>
               )}
