@@ -121,17 +121,20 @@ ${trefleData.growth ? [
 let iosAudioPreUnlocked = false;
 
 // ─── home screen ───────────────────────────────────────────────────────────
+// Container is 390px wide. Rope lines at 16px each side.
+// Button = image + text label → effective width = size + 50.
+// Constraint: left ≥ 16, left + size + 50 ≤ 374.
 const GARDEN_POSITIONS = {
-  1:  { left: 124, top: 423, size: 103 }, // Tulip (Tilly)
-  2:  { left: 86,  top: 95,  size: 113 }, // Peony (Penny)
-  3:  { left: 55,  top: 263, size: 97  }, // Hydrangea (Hattie)
-  4:  { left: 168, top: 237, size: 103 }, // Lily (Lila)
-  5:  { left: 242, top: 409, size: 111 }, // Rose (Rosie)
-  6:  { left: 40,  top: 554, size: 90  }, // Gardenia (Gigi)
-  7:  { left: 199, top: 571, size: 94  }, // Gerbera Daisy (Gertrude)
-  8:  { left: 230, top: 81,  size: 118 }, // Sunflower (Sunny)
-  9:  { left: 60,  top: 724, size: 95  }, // Orchid (Ollie)
-  10: { left: 158, top: 897, size: 101 }, // Marigold (Goldie)
+  2:  { left: 40,  top: 80,  size: 113 }, // Peony   (Penny)   — L
+  8:  { left: 206, top: 64,  size: 118 }, // Sunflwr (Sunny)   — R
+  3:  { left: 42,  top: 248, size: 97  }, // Hydrang (Hattie)  — L
+  4:  { left: 215, top: 228, size: 103 }, // Lily    (Lila)    — R
+  1:  { left: 42,  top: 415, size: 103 }, // Tulip   (Tilly)   — L
+  5:  { left: 210, top: 400, size: 111 }, // Rose    (Rosie)   — R
+  6:  { left: 42,  top: 575, size: 90  }, // Gardeni (Gigi)    — L
+  7:  { left: 210, top: 558, size: 94  }, // Gerbera (Gertrude)— R
+  9:  { left: 42,  top: 735, size: 95  }, // Orchid  (Ollie)   — L
+  10: { left: 145, top: 885, size: 101 }, // Marigld (Goldie)  — C
 };
 
 function HRope() {
@@ -162,19 +165,20 @@ function VRope({ height }) {
 function Home({ onPick }) {
   const canvasH = 1050;
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0" }}>
+    <div className="flex-1 overflow-y-auto" style={{ background: "#f0f0f0", overflowX: "hidden" }}>
       <HRope />
       <div style={{ position: "relative", width: "100%", height: canvasH }}>
-        {/* Left rope */}
-        <div style={{ position: "absolute", left: 24, top: 0, pointerEvents: "none", zIndex: 1 }}>
+        {/* Left rope — 16px from edge */}
+        <div style={{ position: "absolute", left: 16, top: 0, pointerEvents: "none", zIndex: 1 }}>
           <VRope height={canvasH} />
         </div>
-        {/* Right rope */}
-        <div style={{ position: "absolute", right: 24, top: 0, pointerEvents: "none", zIndex: 1 }}>
+        {/* Right rope — 16px from edge */}
+        <div style={{ position: "absolute", right: 16, top: 0, pointerEvents: "none", zIndex: 1 }}>
           <VRope height={canvasH} />
         </div>
         {FLOWERS.map((f) => {
           const pos = GARDEN_POSITIONS[f.id];
+          if (!pos) return null;
           return (
             <button
               key={f.id}
@@ -192,6 +196,7 @@ function Home({ onPick }) {
                 padding: 0,
                 cursor: "pointer",
                 zIndex: 2,
+                overflow: "visible",
               }}
             >
               <img src={f.svg} alt={f.name} style={{ width: pos.size, height: pos.size, objectFit: "contain", display: "block" }} />
