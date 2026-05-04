@@ -344,30 +344,36 @@ function PlantChat({ flower, onBack }) {
     window.speechSynthesis.speak(silent);
   };
 
-  const startListening = () => {
-    unlockAudio(); // iOS: unlock TTS on first user tap
+  const startListening = async () => {
+    unlockAudio(); // iOS: unlock TTS synchronously within this user gesture
     if (!recognitionRef.current || listeningRef.current || loadingRef.current) return;
+    // Request mic within the user gesture so the browser reliably shows the permission dialog
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop()); // recognition manages its own stream
+    } catch {
+      return; // denied — bail quietly
+    }
     stopSpeaking();
     gotResultRef.current = false;
     listeningRef.current = true;
-    try { recognitionRef.current.start(); setListening(true); } catch (e) { listeningRef.current = false; setListening(false); }
+    try { recognitionRef.current.start(); setListening(true); } catch { listeningRef.current = false; setListening(false); }
   };
 
-  const pickWarmFemaleVoice = () => {
+  const pickWarmMaleVoice = () => {
     const voices = voicesRef.current.length
       ? voicesRef.current
       : (window.speechSynthesis?.getVoices() ?? []);
-    // Prefer warmer, less-robotic voices; Karen & Nicky sound warmer on iOS
+    // Warm male voices — Daniel & Tom are the best on iOS/macOS
     const priority = [
-      "Nicky", "Karen", "Samantha", "Tessa", "Moira",
-      "Microsoft Aria", "Google US English",
-      "Microsoft Zira", "Google UK English Female",
+      "Daniel", "Tom", "Arthur", "Oliver", "Aaron", "Gordon",
+      "Google UK English Male", "Microsoft David", "Microsoft Mark", "Microsoft Guy",
     ];
     for (const name of priority) {
       const v = voices.find(v => v.name.includes(name));
       if (v) return v;
     }
-    return voices.find(v => /female/i.test(v.name) && /en/i.test(v.lang))
+    return voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang))
       || voices.find(v => /en/i.test(v.lang))
       || voices[0]
       || null;
@@ -382,8 +388,8 @@ function PlantChat({ flower, onBack }) {
       const u = new SpeechSynthesisUtterance(text);
       // Keep a strong ref — Chrome GC can collect the utterance mid-speech causing silent playback
       utteranceRef.current = u;
-      u.rate = 1.05; u.pitch = 1.6;
-      const voice = pickWarmFemaleVoice();
+      u.rate = 1.0; u.pitch = 0.9;
+      const voice = pickWarmMaleVoice();
       if (voice) u.voice = voice;
       let resumeInterval;
       u.onstart = () => {
@@ -410,22 +416,21 @@ function PlantChat({ flower, onBack }) {
     }, 50);
   };
 
-  // Request mic permission upfront, then greet.
+  // Greet on mount. Mic permission is requested on the first tap (user gesture),
+  // which makes the browser reliably show the dialog on all platforms.
   // On iOS, audio is locked until a user gesture — queue the greeting so it
   // plays as soon as the user taps anything (unlockAudio will fire it).
   useEffect(() => {
     const greeting = `Hi! I'm Bud. What would you like to know about ${flower.nickname} today?`;
     let cancelled = false;
-    const init = async () => {
-      try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (_) {}
+    const timer = setTimeout(() => {
       if (cancelled) return;
       if (audioUnlockedRef.current) {
         speak(greeting);
       } else {
         pendingSpeechRef.current = greeting;
       }
-    };
-    const timer = setTimeout(init, 400);
+    }, 400);
     return () => { cancelled = true; clearTimeout(timer); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
