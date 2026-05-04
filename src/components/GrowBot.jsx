@@ -181,54 +181,21 @@ function Home({ onPick }) {
   );
 }
 
-// ─── bud avatar with animated eyes ────────────────────────────────────────
+// ─── bud avatar — PNG image + SVG eye overlay ─────────────────────────────
 function BudAvatar({ speaking, listening, size = 144 }) {
-  const pupilAnim = {
-    transformBox: "fill-box",
-    transformOrigin: "center",
-    animation: speaking ? "eyeSwing 0.8s ease-in-out infinite" : "none",
-  };
+  const bodyAnim = speaking
+    ? "budPulse 1.4s ease-in-out infinite"
+    : listening
+    ? "budBounce 0.6s ease-in-out infinite"
+    : "none";
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 115"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{
-        animation: speaking
-          ? "budPulse 1.4s ease-in-out infinite"
-          : listening
-          ? "budBounce 0.6s ease-in-out infinite"
-          : "none",
-      }}
-    >
-      {/* Body */}
-      <path
-        d="M50 6 C50 6, 13 46, 13 74 C13 96, 29 110, 50 110 C71 110, 87 96, 87 74 C87 46, 50 6, 50 6Z"
-        fill="#b8d9ea"
+    <div style={{ width: size, height: size, animation: bodyAnim, flexShrink: 0 }}>
+      <img
+        src="/assets/bud.png"
+        alt="Bud"
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
       />
-      {/* Left eye — white sclera */}
-      <ellipse cx="36" cy="68" rx="10" ry="13" fill="#f5f2ee" />
-      {/* Left pupil (swings left-right while speaking) */}
-      <ellipse cx="36" cy="70" rx="6.5" ry="8.5" fill="#3d2b1f" style={pupilAnim} />
-      {/* Left eye shine */}
-      <ellipse cx="39.5" cy="64.5" rx="2.5" ry="2.5" fill="white" opacity="0.9" style={pupilAnim} />
-      {/* Right eye — white sclera */}
-      <ellipse cx="64" cy="68" rx="10" ry="13" fill="#f5f2ee" />
-      {/* Right pupil (swings left-right while speaking) */}
-      <ellipse cx="64" cy="70" rx="6.5" ry="8.5" fill="#3d2b1f" style={pupilAnim} />
-      {/* Right eye shine */}
-      <ellipse cx="67.5" cy="64.5" rx="2.5" ry="2.5" fill="white" opacity="0.9" style={pupilAnim} />
-      {/* Cheeks */}
-      <ellipse cx="22" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
-      <ellipse cx="78" cy="82" rx="9" ry="6.5" fill="#7db8d0" opacity="0.55" />
-      {/* Smile */}
-      <path d="M41 91 Q50 99 59 91" stroke="#3d2b1f" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-      {/* Leaves */}
-      <path d="M44 8 C37 -2, 26 6, 38 17" fill="#5aad6a" />
-      <path d="M56 8 C63 -2, 74 6, 62 17" fill="#4a9d5a" />
-    </svg>
+    </div>
   );
 }
 
@@ -242,9 +209,12 @@ function PlantChat({ flower, onBack }) {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [volume, setVolume] = useState(0.8);
+  const volumeRef = useRef(0.8);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [activeTab, setActiveTab] = useState("talk");
   const [trefleData, setTrefleData] = useState(null);
+  const [msgExpanded, setMsgExpanded] = useState(false);
 
   useEffect(() => {
     fetchTrefleData(flower.species).then(setTrefleData);
@@ -252,8 +222,28 @@ function PlantChat({ flower, onBack }) {
   const recognitionRef = useRef(null);
   const transcriptRef = useRef(null);
   const sendMessageRef = useRef(null);
-  const listeningRef = useRef(false);   // mirrors listening state for use inside callbacks
-  const gotResultRef = useRef(false);   // did this session produce a result?
+  const listeningRef = useRef(false);
+  const gotResultRef = useRef(false);
+  const activeTabRef = useRef("talk");
+  const voiceEnabledRef = useRef(true);
+  const loadingRef = useRef(false);
+  const voicesRef = useRef([]);
+  const utteranceRef = useRef(null);
+  // iOS requires speech synthesis to be triggered from a user gesture.
+  // audioUnlockedRef starts false on iOS; first user tap calls unlockAudio().
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const audioUnlockedRef = useRef(!isIOS);
+  const pendingSpeechRef = useRef(null);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const v = window.speechSynthesis?.getVoices() ?? [];
+      if (v.length) voicesRef.current = v;
+    };
+    loadVoices();
+    window.speechSynthesis?.addEventListener("voiceschanged", loadVoices);
+    return () => window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
+  }, []);
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -292,31 +282,115 @@ function PlantChat({ flower, onBack }) {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  // Auto-greet: Bud speaks the opening line as soon as the screen mounts
-  useEffect(() => {
-    const greeting = `Hi! I'm Bud. What would you like to know about ${flower.nickname} today?`;
-    const timer = setTimeout(() => speak(greeting), 600);
-    return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setMsgExpanded(false); }, [messages]);
 
-  const speak = (text) => {
-    if (!voiceEnabled || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.0; u.pitch = 1.05;
-    u.onstart = () => setSpeaking(true);
-    u.onend = () => setSpeaking(false);
-    window.speechSynthesis.speak(u);
-  };
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
+  useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
   const stopSpeaking = () => { window.speechSynthesis?.cancel(); setSpeaking(false); };
 
+  // iOS: speak a near-silent utterance within a user gesture to unlock TTS,
+  // then play any queued greeting.
+  const unlockAudio = () => {
+    if (audioUnlockedRef.current || !window.speechSynthesis) return;
+    audioUnlockedRef.current = true;
+    const silent = new SpeechSynthesisUtterance(" ");
+    silent.volume = 0.001;
+    silent.rate = 10;
+    silent.onend = () => {
+      const queued = pendingSpeechRef.current;
+      pendingSpeechRef.current = null;
+      if (queued) speak(queued);
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(silent);
+  };
+
   const startListening = () => {
-    if (!recognitionRef.current || listeningRef.current) return;
+    unlockAudio(); // iOS: unlock TTS on first user tap
+    if (!recognitionRef.current || listeningRef.current || loadingRef.current) return;
     stopSpeaking();
     gotResultRef.current = false;
     listeningRef.current = true;
     try { recognitionRef.current.start(); setListening(true); } catch (e) { listeningRef.current = false; setListening(false); }
   };
+
+  const pickWarmFemaleVoice = () => {
+    const voices = voicesRef.current.length
+      ? voicesRef.current
+      : (window.speechSynthesis?.getVoices() ?? []);
+    const priority = [
+      "Samantha", "Karen", "Moira", "Tessa",
+      "Google US English", "Microsoft Zira", "Microsoft Eva",
+      "Google UK English Female",
+    ];
+    for (const name of priority) {
+      const v = voices.find(v => v.name.includes(name));
+      if (v) return v;
+    }
+    return voices.find(v => /female/i.test(v.name) && /en/i.test(v.lang))
+      || voices.find(v => /en/i.test(v.lang))
+      || voices[0]
+      || null;
+  };
+
+  const speak = (text) => {
+    if (!voiceEnabledRef.current || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    // Delay after cancel — Chrome drops speak() called too soon after cancel()
+    setTimeout(() => {
+      if (!voiceEnabledRef.current) return;
+      const u = new SpeechSynthesisUtterance(text);
+      // Keep a strong ref — Chrome GC can collect the utterance mid-speech causing silent playback
+      utteranceRef.current = u;
+      u.rate = 0.95; u.pitch = 1.2; u.volume = volumeRef.current;
+      const voice = pickWarmFemaleVoice();
+      if (voice) u.voice = voice;
+      let resumeInterval;
+      u.onstart = () => {
+        setSpeaking(true);
+        // Chrome pauses long utterances ~15s in; keep resuming
+        resumeInterval = setInterval(() => {
+          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        }, 10000);
+      };
+      u.onend = () => {
+        clearInterval(resumeInterval);
+        utteranceRef.current = null;
+        setSpeaking(false);
+        if (activeTabRef.current === "talk" && !loadingRef.current) {
+          setTimeout(() => startListening(), 400);
+        }
+      };
+      u.onerror = () => {
+        clearInterval(resumeInterval);
+        utteranceRef.current = null;
+        setSpeaking(false);
+      };
+      window.speechSynthesis.speak(u);
+    }, 50);
+  };
+
+  // Request mic permission upfront, then greet.
+  // On iOS, audio is locked until a user gesture — queue the greeting so it
+  // plays as soon as the user taps anything (unlockAudio will fire it).
+  useEffect(() => {
+    const greeting = `Hi! I'm Bud. What would you like to know about ${flower.nickname} today?`;
+    let cancelled = false;
+    const init = async () => {
+      try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (_) {}
+      if (cancelled) return;
+      if (audioUnlockedRef.current) {
+        speak(greeting);
+      } else {
+        pendingSpeechRef.current = greeting;
+      }
+    };
+    const timer = setTimeout(init, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = async (textOverride) => {
     const text = (textOverride ?? input).trim();
@@ -380,36 +454,79 @@ function PlantChat({ flower, onBack }) {
         <CareItem icon={<Thermometer size={13} />} label="Temp" value={flower.temp.split(";")[0]} />
       </div>
 
-      {/* ── Talk view ── */}
-      {activeTab === "talk" && (
-        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
-          {/* Bud hero zone */}
-          <div className="flex flex-col items-center justify-center px-6 pt-5 pb-4" style={{ flex: "1 1 0" }}>
-            {/* Toggle to chat */}
+      {/* ── Shared tab toggle — hidden when message is expanded ── */}
+      {!msgExpanded && (
+        <div className="flex justify-center pt-3 pb-1" style={{ background: "#FDFCF6" }}>
+          {activeTab === "talk" ? (
             <button
-              onClick={() => setActiveTab("conversation")}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full mb-6 active:scale-95 transition-transform"
+              onClick={() => { unlockAudio(); setActiveTab("conversation"); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
               style={{ background: "#3f5ba4", color: "#fff" }}
             >
               <MessageSquare size={14} strokeWidth={2} />
               <span className="text-[10px] uppercase tracking-widest">Chat history</span>
             </button>
+          ) : (
+            <button
+              onClick={() => { unlockAudio(); setActiveTab("talk"); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
+              style={{ background: "#3f5ba4", color: "#fff" }}
+            >
+              <Mic size={14} strokeWidth={2} />
+              <span className="text-[10px] uppercase tracking-widest">Talk to Bud</span>
+            </button>
+          )}
+        </div>
+      )}
 
-            <BudAvatar speaking={speaking} listening={listening} size={144} />
+      {/* ── Talk view ── */}
+      {activeTab === "talk" && (
+        <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
+          {/* Bud hero zone */}
+          <div className="flex flex-col items-center justify-center px-6 pt-4 pb-4" style={{ flex: "1 1 0" }}>
+            {!msgExpanded && <BudAvatar speaking={speaking} listening={listening} size={144} />}
 
-            <div className="mt-2 mb-4 text-center px-4" style={{ minHeight: 56 }}>
+            <div className="mt-2 mb-4 text-center px-4" style={{ width: "100%" }}>
               {loading ? (
                 <div className="flex justify-center gap-1.5 mt-4">
                   <Dot delay={0} /><Dot delay={0.15} /><Dot delay={0.3} />
                 </div>
+              ) : msgExpanded ? (
+                /* Expanded: full message, scrollable, tap to collapse */
+                <div
+                  onClick={() => setMsgExpanded(false)}
+                  style={{ maxHeight: 280, overflowY: "auto", cursor: "pointer", textAlign: "left", scrollbarWidth: "none" }}
+                >
+                  <p className="text-[14px] leading-relaxed" style={{ color: "#0d2d46" }}>
+                    {lastBudMessage}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-widest mt-3" style={{ color: "#3f5ba4", opacity: 0.7, textAlign: "center" }}>
+                    Tap to close
+                  </p>
+                </div>
               ) : (
-                <p className="text-[14px] leading-snug" style={{ color: "#0d2d46", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {lastBudMessage}
-                </p>
+                /* Normal: 3-line clamp + "read more" if long */
+                <div>
+                  <p
+                    className="text-[14px] leading-snug"
+                    style={{ color: "#0d2d46", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                  >
+                    {lastBudMessage}
+                  </p>
+                  {lastBudMessage.length > 140 && (
+                    <button
+                      onClick={() => setMsgExpanded(true)}
+                      className="text-[11px] uppercase tracking-widest mt-1 active:opacity-60"
+                      style={{ color: "#3f5ba4" }}
+                    >
+                      Read more
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
-            {voiceSupported && (
+            {voiceSupported && !msgExpanded && (
               <div className="flex flex-col items-center gap-2">
                 <div className="relative flex items-center justify-center">
                   {listening && (
@@ -437,17 +554,26 @@ function PlantChat({ flower, onBack }) {
                 <span className="text-[11px] uppercase tracking-widest" style={{ color: "#3f5ba4", opacity: loading || speaking ? 0.4 : 1 }}>
                   {listening ? "Listening…" : speaking ? "Bud is talking…" : loading ? "Thinking…" : "Tap to talk"}
                 </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <Volume2 size={13} style={{ color: "#3f5ba4", opacity: 0.6 }} />
+                  <input
+                    type="range" min="0" max="1" step="0.05"
+                    value={volume}
+                    onChange={e => setVolume(parseFloat(e.target.value))}
+                    style={{ width: 100, accentColor: "#3f5ba4" }}
+                  />
+                </div>
               </div>
             )}
           </div>
 
           {/* Quick asks */}
-          {messages.length <= 2 && !loading && (
+          {messages.length <= 2 && !loading && !msgExpanded && (
             <div className="flex gap-2 px-4 py-2 overflow-x-auto" style={{ background: "#FDFCF6", borderTop: "1px solid rgba(13,45,70,0.08)", scrollbarWidth: "none" }}>
               {quickAsks.map((q) => (
                 <button
                   key={q.label}
-                  onClick={() => { sendMessage(q.q); setActiveTab("conversation"); }}
+                  onClick={() => { unlockAudio(); sendMessage(q.q); setActiveTab("conversation"); }}
                   className="whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] active:scale-95 transition font-medium"
                   style={{ border: "1.5px solid #3f5ba4", color: "#3f5ba4", background: "transparent" }}
                 >
@@ -462,17 +588,6 @@ function PlantChat({ flower, onBack }) {
       {/* ── Conversation view ── */}
       {activeTab === "conversation" && (
         <div className="flex-1 flex flex-col" style={{ background: "#FDFCF6" }}>
-          {/* Toggle back to talk */}
-          <div className="flex justify-center pt-3 pb-1">
-            <button
-              onClick={() => setActiveTab("talk")}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full active:scale-95 transition-transform"
-              style={{ background: "#3f5ba4", color: "#fff" }}
-            >
-              <Mic size={14} strokeWidth={2} />
-              <span className="text-[10px] uppercase tracking-widest">Talk to Bud</span>
-            </button>
-          </div>
           <div ref={transcriptRef} className="overflow-y-auto px-4 pt-2 pb-2 space-y-3" style={{ flex: "1 1 0", minHeight: 0, scrollbarWidth: "none" }}>
             {messages.map((m, i) => (
               m.role === "user" ? (
@@ -512,7 +627,6 @@ function PlantChat({ flower, onBack }) {
               className="flex-1 px-3 py-2 rounded-full text-[12px] outline-none"
               style={{ background: "rgba(63,91,164,0.07)", border: "1px solid rgba(63,91,164,0.15)", color: "#0d2d46" }}
               disabled={loading || listening}
-              autoFocus
             />
             <button
               onClick={() => sendMessage()}
@@ -543,11 +657,7 @@ function PlantChat({ flower, onBack }) {
           0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
           30% { opacity: 1; transform: scale(1.15); }
         }
-        @keyframes eyeSwing {
-          0%   { transform: translateX(-2.5px); }
-          50%  { transform: translateX(2.5px); }
-          100% { transform: translateX(-2.5px); }
-        }
+
       `}</style>
     </div>
   );
