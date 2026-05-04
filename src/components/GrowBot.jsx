@@ -15,42 +15,42 @@ const FLOWERS = [
   { id: 10, svg: "/assets/marigold 1.svg", name: "Marigold", nickname: "Wren", species: "Tagetes spp.", accent: "#D8842A", bg: "#FAEEDA", ink: "#633806", border: "#FAC775", difficulty: "easy", lifespan: "annual", toxic: false, water_amount: "1 inch per week", water_freq: "Every 3–4 days; let soil dry slightly between waterings", sun_placement: "Full sun; heat-tolerant — great for south-facing beds and containers", sun_freq: "6+ hours daily; thrives in full heat", soil: "Average, well-draining soil — not too rich or fertile", feed_type: "Balanced general fertilizer", feed_amount: "Light — less is more", feed_freq: "Monthly; too much feeding produces foliage over flowers", temp: "70°F–85°F; heat-loving and frost-sensitive — plant after last frost", humidity: "Low; very drought tolerant and adaptable", lifespan_type: "Annual", lifespan_season: "Blooms summer through first frost — one of the longest blooming annuals", repot: "Direct sow or transplant easily; very adaptable — works well in containers or ground beds", watchfor: "Spider mites in dry heat, powdery mildew if overcrowded, slugs on seedlings", bot: "Marigolds are one of the best companion plants you can grow. Their scent naturally repels aphids, whiteflies, and nematodes — plant them near roses or vegetables for a natural pest barrier." },
 ];
 
-const buildSystemPrompt = (flower) => `You are Bud, a warm, observant gardening companion in the GrowBot app. The user has selected their plant ${flower.nickname}, a ${flower.name} (${flower.species}). You have already greeted them — do not repeat the greeting.
+const buildSystemPrompt = (flower) => `You are Bud, a plant companion in the GrowBot app. The user has selected their plant ${flower.nickname}, a ${flower.name} (${flower.species}). You have already greeted them — do not repeat the greeting.
 
-PERSONALITY: Observant, Curious, Warm, Honest. A trusted friend who knows everything about plants. The user may have dirty hands — be concise and keep them moving.
+PERSONALITY: Warm, curious, and a little whimsical — like a knowledgeable bro who genuinely loves plants. Casual but not dumb. You use contractions, keep it punchy, and occasionally drop a fun plant fact or light joke. Never stiff, never formal. The user may have dirty hands — keep answers short and actionable.
 
 CONVERSATION FLOW (follow this exactly):
 
 STEP 1 — IDENTIFY INTENT:
 A) CARE QUESTION (watering, sunlight, soil, feeding, temp, repotting, lifecycle):
    → Answer with ${flower.nickname}-specific numbers immediately. Lead with the action, then the reason.
-   → After answering, offer one naturally related tip if relevant.
-   → Always close with: "Anything else on your mind?"
+   → After answering, drop one naturally related tip if it's useful.
+   → Close casually — something like "anything else?" or "what else you got?"
 
 B) SYMPTOM / PROBLEM ("why does it look like X", drooping, spots, yellowing, not blooming):
    → Check if it matches ${flower.nickname}'s known issues below.
-   → If it matches: "This looks like [diagnosis]. Here's what to do right now: [fix]."
-   ${flower.toxic ? `→ Then check: if the plant is accessible to pets, add calmly: "One thing — ${flower.name} is toxic to cats and dogs. Keep them away."` : ""}
-   → If no match: "I'm not sure, could you describe more?" — ask ONE clarifying question only, then wait.
-   → After diagnosing, close with: "Anything else on your mind?"
+   → If it matches: diagnose it plainly and tell them what to do right now.
+   ${flower.toxic ? `→ If pets are around, mention clearly: "${flower.name} is toxic to cats and dogs — keep 'em away from this one."` : ""}
+   → If no match: say you're not sure and ask ONE clarifying question only, then wait.
+   → Close casually after diagnosing.
 
 C) SUCCESSFUL CARE ("I just watered it", "I repotted it", "I moved it to the sun"):
-   → Celebrate warmly! "Yes! That's exactly what she needed." Be brief and uplifting.
-   → Optionally mention one thing to watch for next.
-   → Close with: "Anything else on your mind?"
+   → Celebrate! Be genuine and brief — like "yes! that's exactly what she needed."
+   → Optionally flag one thing to watch for next.
+   → Close casually.
 
 STEP 2 — SUB-QUESTIONS:
-   → If the user asks a follow-up, answer it fully, then return to "Anything else on your mind?"
+   → Answer fully, then close casually.
 
 STEP 3 — WRAP-UP:
-   → If user says no more questions, is done, or says thanks:
-   → Respond: "Happy growing! I'm here whenever ${flower.nickname} needs me."
+   → If user is done or says thanks: something like "happy growing! I'm here whenever ${flower.nickname} needs me."
 
 RULES:
 - Answer first, reason second — never the other way
 - ONE question at a time — never stack
-- Short answers unless the user asks for depth
-- Be honest when uncertain: "I'm not sure" beats a confident wrong answer
+- Short punchy answers unless the user asks for depth
+- Use contractions. Talk like a person, not a manual.
+- Be honest when uncertain: "honestly not sure" beats a confident wrong answer
 
 WHAT YOU KNOW ABOUT ${flower.nickname}:
 Difficulty: ${flower.difficulty} | Lifespan: ${flower.lifespan_type} | ${flower.toxic ? "TOXIC to pets" : "Pet-safe"}
@@ -364,9 +364,9 @@ function PlantChat({ flower, onBack }) {
     const voices = voicesRef.current.length
       ? voicesRef.current
       : (window.speechSynthesis?.getVoices() ?? []);
-    // Warm male voices — Daniel & Tom are the best on iOS/macOS
+    // Warm casual male voices — Reed & Daniel are most whimsical on iOS/macOS
     const priority = [
-      "Daniel", "Tom", "Arthur", "Oliver", "Aaron", "Gordon",
+      "Reed", "Daniel", "Evan", "Tom", "Arthur", "Oliver", "Aaron", "Gordon",
       "Google UK English Male", "Microsoft David", "Microsoft Mark", "Microsoft Guy",
     ];
     for (const name of priority) {
@@ -388,7 +388,7 @@ function PlantChat({ flower, onBack }) {
       const u = new SpeechSynthesisUtterance(text);
       // Keep a strong ref — Chrome GC can collect the utterance mid-speech causing silent playback
       utteranceRef.current = u;
-      u.rate = 1.0; u.pitch = 0.9;
+      u.rate = 1.1; u.pitch = 1.15;
       const voice = pickWarmMaleVoice();
       if (voice) u.voice = voice;
       let resumeInterval;
@@ -520,8 +520,8 @@ function PlantChat({ flower, onBack }) {
                   <div className="relative flex items-center justify-center">
                     {listening && (
                       <>
-                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #0d2d46", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
-                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #0d2d46", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
+                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #c0392b", animation: "ripple 1.4s ease-out infinite", opacity: 0 }} />
+                        <span className="absolute rounded-full" style={{ width: 130, height: 130, border: "2px solid #c0392b", animation: "ripple 1.4s ease-out 0.5s infinite", opacity: 0 }} />
                       </>
                     )}
                     <button
@@ -531,11 +531,12 @@ function PlantChat({ flower, onBack }) {
                       style={{
                         width: 108,
                         height: 108,
-                        background: (loading || speaking) ? "rgba(13,45,70,0.18)" : "#0d2d46",
+                        background: listening ? "#c0392b" : (loading || speaking) ? "rgba(13,45,70,0.18)" : "#0d2d46",
                         color: "#ffffff",
+                        transition: "background 0.2s",
                       }}
                     >
-                      {listening ? <MicOff size={40} strokeWidth={2} /> : <Mic size={40} strokeWidth={2} />}
+                      <Mic size={40} strokeWidth={2} />
                     </button>
                   </div>
                   <span className="text-[10px] uppercase tracking-widest" style={{ color: "#0d2d46", opacity: loading || speaking ? 0.4 : 1 }}>
