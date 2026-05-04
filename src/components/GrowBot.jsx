@@ -116,6 +116,10 @@ ${trefleData.growth ? [
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Hmm, I lost my train of thought. Try asking again?";
 }
 
+// Tracks whether iOS TTS was pre-unlocked during the navigation tap.
+// The Home → PlantChat tap is a user gesture, so we can speak there.
+let iosAudioPreUnlocked = false;
+
 // ─── home screen ───────────────────────────────────────────────────────────
 const GARDEN_POSITIONS = {
   1:  { left: 124, top: 423, size: 103 }, // Tulip (Tilly)
@@ -259,10 +263,8 @@ function PlantChat({ flower, onBack }) {
   const loadingRef = useRef(false);
   const voicesRef = useRef([]);
   const utteranceRef = useRef(null);
-  // iOS requires speech synthesis to be triggered from a user gesture.
-  // audioUnlockedRef starts false on iOS; first user tap calls unlockAudio().
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const audioUnlockedRef = useRef(!isIOS);
+  const audioUnlockedRef = useRef(!isIOS || iosAudioPreUnlocked);
   const pendingSpeechRef = useRef(null);
 
   useEffect(() => {
@@ -699,7 +701,17 @@ export default function App() {
           />
           {selected
             ? <PlantChat flower={selected} onBack={() => setSelected(null)} />
-            : <Home onPick={setSelected} />
+            : <Home onPick={(f) => {
+                // This tap is a user gesture — pre-unlock iOS TTS before PlantChat mounts
+                if (!iosAudioPreUnlocked && window.speechSynthesis) {
+                  iosAudioPreUnlocked = true;
+                  const u = new SpeechSynthesisUtterance(" ");
+                  u.volume = 0.001;
+                  u.rate = 10;
+                  window.speechSynthesis.speak(u);
+                }
+                setSelected(f);
+              }} />
           }
         </div>
       </div>
