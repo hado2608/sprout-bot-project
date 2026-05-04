@@ -360,20 +360,21 @@ function PlantChat({ flower, onBack }) {
     try { recognitionRef.current.start(); setListening(true); } catch { listeningRef.current = false; setListening(false); }
   };
 
-  const pickWarmMaleVoice = () => {
+  const pickWarmFemaleVoice = () => {
     const voices = voicesRef.current.length
       ? voicesRef.current
       : (window.speechSynthesis?.getVoices() ?? []);
-    // Warm casual male voices — Reed & Daniel are most whimsical on iOS/macOS
+    // Prefer warmer, less-robotic voices; Karen & Nicky sound warmer on iOS
     const priority = [
-      "Reed", "Daniel", "Evan", "Tom", "Arthur", "Oliver", "Aaron", "Gordon",
-      "Google UK English Male", "Microsoft David", "Microsoft Mark", "Microsoft Guy",
+      "Nicky", "Karen", "Samantha", "Tessa", "Moira",
+      "Microsoft Aria", "Google US English",
+      "Microsoft Zira", "Google UK English Female",
     ];
     for (const name of priority) {
       const v = voices.find(v => v.name.includes(name));
       if (v) return v;
     }
-    return voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang))
+    return voices.find(v => /female/i.test(v.name) && /en/i.test(v.lang))
       || voices.find(v => /en/i.test(v.lang))
       || voices[0]
       || null;
@@ -388,8 +389,8 @@ function PlantChat({ flower, onBack }) {
       const u = new SpeechSynthesisUtterance(text);
       // Keep a strong ref — Chrome GC can collect the utterance mid-speech causing silent playback
       utteranceRef.current = u;
-      u.rate = 1.1; u.pitch = 1.15;
-      const voice = pickWarmMaleVoice();
+      u.rate = 1.05; u.pitch = 1.6;
+      const voice = pickWarmFemaleVoice();
       if (voice) u.voice = voice;
       let resumeInterval;
       u.onstart = () => {
